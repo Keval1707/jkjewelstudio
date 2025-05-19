@@ -2,10 +2,13 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FadeIn from "./FadeIn";
 
-const GalleryGrid = ({ data ,categories }) => {
+const GalleryGrid = ({ data, categories }) => {
   const [selected, setSelected] = useState(null);
   const [activeCategory, setActiveCategory] = useState("All");
-  const filteredData =activeCategory ==="All" ?data:data.filter((item)=>item.category===activeCategory);
+  const filteredData =
+    activeCategory === "All"
+      ? data
+      : data.filter((item) => item.category === activeCategory);
 
   return (
     <div className="gallery-container">
@@ -22,7 +25,6 @@ const GalleryGrid = ({ data ,categories }) => {
           </button>
         ))}
       </div>
-
 
       <motion.div className="gallery-grid" layout>
         {filteredData.map((item, i) => (
@@ -72,7 +74,7 @@ const GalleryGrid = ({ data ,categories }) => {
               <div className="lightbox-details">
                 <h3>{selected.name}</h3>
                 <p>{selected.desc}</p>
-                <p>{selected.price} ₹</p>
+                {selected.price && <p>{selected.price} ₹</p>}
                 <button
                   to="/contact"
                   onClick={() => (window.location.href = "/contact")}
