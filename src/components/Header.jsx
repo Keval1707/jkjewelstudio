@@ -79,7 +79,7 @@ const Header = () => {
             </li>
 
             {/* Conditionally show Log In / Log Out */}
-            {!isAuthenticated ? (
+            {/* {!isAuthenticated ? (
               <li className="nav-item">
                 <button
                   onClick={() =>
@@ -107,7 +107,7 @@ const Header = () => {
                   <span className="profile-name">{user?.name}</span>
                 </Link>
               </li>
-            )}
+            )} */}
           </ul>
         </nav>
       </div>

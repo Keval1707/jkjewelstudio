@@ -1,68 +1,58 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ProductsGrid from "../components/ProductsGrid";
+import { fetchProducts, fetchCategories } from "../utils/api";
 
-const data = [
-  {
-    id: 101,
-    name: "Diamond Ring",
-    desc: "Elegant 14k white gold diamond ring",
-    price: "2500",
-    img: "/images/gallery/11.png",
-    category: "Rings",
-  },
-  {
-    id: 102,
-    name: "Gold Necklace",
-    desc: "24k gold necklace with floral pendant",
-    price: "1800",
-    img: "/images/gallery/12.png",
-    category: "Necklaces",
-  },
-  {
-    id: 103,
-    name: "Sapphire Earrings",
-    desc: "Blue sapphire studs in sterling silver",
-    price: "750",
-    img: "/images/gallery/13.png",
-    category: "Earrings",
-  },
-  {
-    id: 1041,
-    name: "Pearl Bracelet",
-    desc: "Classic pearl bracelet with gold clasp",
-    price: "500",
-    img: "/images/gallery/4.png",
-    category: "Bracelets",
-  },
-  {
-    id: 104,
-    name: "Ruby Pendant",
-    desc: "Ruby heart pendant on a silver chain",
-    price: "950",
-    img: "/images/gallery/14.png",
-    category: "Necklaces",
-  },
-  {
-    id: 105,
-    name: "Ruby Pendant",
-    desc: "Ruby heart pendant on a silver chain",
-    price: "950",
-    img: "/images/gallery/5.png",
-    category: "Necklaces",
-  },
-  {
-    id: 106,
-    name: "Emerald Anklet",
-    desc: "Delicate anklet with emerald accents",
-    price: "400",
-    img: "/images/gallery/16.png",
-    category: "Bracelets", // Anklet is best grouped with bracelets
-  },
-];
+const Jewellery = () => {
+  const [data, setData] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-const categories = [ "Rings", "Necklaces", "Earrings", "Bracelets"];
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        // Fetch categories
+        const catRes = await fetchCategories();
+        // Extract category names from response
+        const categoryNames = catRes.data.map((cat) => cat.name);
+        setCategories(categoryNames);
 
-const Gallery = () => {
+        // Fetch products
+        const prodRes = await fetchProducts();
+
+        // Map product data to expected format
+        const products = prodRes.data.map((p) => ({
+          id: p._id,
+          name: p.name,
+          desc: p.desc || "",
+          price: p.price,
+          discount: p.discount ? p.discount + "%" : "", // Add % if discount exists
+          img: p.img && p.img.length > 0 ? p.img[0] : "/images/placeholder.png", // Use first image URL or placeholder
+          category: p.category?.name || "Uncategorized",
+          sku: p.sku,
+          stock: p.stock,
+          material: p.material,
+          rating: p.rating,
+          reviews: p.reviews,
+        }));
+
+        setData(products);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load products or categories.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  if (loading) return <div>Loading jewellery...</div>;
+  if (error) return <div style={{ color: "red" }}>{error}</div>;
+
   return (
     <section className="gallery-page">
       <h1>Jewellery</h1>
@@ -71,4 +61,4 @@ const Gallery = () => {
   );
 };
 
-export default Gallery;
+export default Jewellery;

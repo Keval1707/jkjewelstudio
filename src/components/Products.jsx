@@ -1,67 +1,55 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
+import { fetchProductById } from "../utils/api";
 
 const Products = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [mainImage, setMainImage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { addToCart } = useContext(CartContext);
 
   const handleAddToCart = () => {
-    addToCart({ ...product, quantity: 1 });
+    if (product) {
+      addToCart({ ...product, quantity: 1 });
+    }
   };
 
-  const data = [
-    {
-      id: 101,
-      name: "Diamond Ring",
-      sku: "DR-101-WG",
-      desc: "Elegant 14k white gold diamond ring with certified diamonds.",
-      price: 2500,
-      discount: "20%",
-      material: "14K White Gold",
-      stock: true,
-      rating: 4.8,
-      reviews: 134,
-      img: [
-        "/images/gallery/11.png",
-        "/images/gallery/11_1.png",
-        "/images/gallery/11_2.png",
-        "/images/gallery/11_3.png",
-        "/images/gallery/11_4.png",
-      ],
-      category: "Rings",
-    },
-    {
-      id: 102,
-      name: "Gold Necklace",
-      sku: "GN-102-FP",
-      desc: "24k gold necklace with floral pendant.",
-      price: 1800,
-      discount: "1%",
-      material: "24K Yellow Gold",
-      stock: true,
-      rating: 4.6,
-      reviews: 89,
-      img: [
-        "/images/gallery/1.png",
-        "/images/gallery/2.png",
-        "/images/gallery/3.png",
-        "/images/gallery/4.png",
-        "/images/gallery/12.png",
-      ],
-      category: "Necklaces",
-    },
-  ];
-
   useEffect(() => {
-    const found = data.find((item) => item.id === parseInt(id, 10)) || null;
-    setProduct(found);
-    if (found) {
-      setMainImage(found.img[0]);
-    }
+    setLoading(true);
+    setError(null);
+
+    fetchProductById(id)
+      .then((res) => {
+        const prod = res.data;
+        setProduct(prod);
+        setMainImage(prod.img && prod.img.length > 0 ? prod.img[0] : "");
+      })
+      .catch(() => {
+        setError("Failed to load product data.");
+        setProduct(null);
+      })
+      .finally(() => setLoading(false));
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="container">
+        <h2>Loading product details...</h2>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container">
+        <h2>Error</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -72,44 +60,84 @@ const Products = () => {
     );
   }
 
+  // Parse discount removing any % sign and converting to float
+  const parseDiscount = (disc) => {
+    if (!disc) return 0;
+    if (typeof disc === "string") {
+      return parseFloat(disc.replace("%", ""));
+    }
+    return parseFloat(disc);
+  };
+
+  const discountPercent = parseDiscount(product.discount);
+  const discountedPrice = (
+    product.price *
+    (1 - discountPercent / 100)
+  ).toFixed(2);
+
   return (
     <div className="product-container container">
       <div className="product-left">
         <div className="main-image">
-          <img src={mainImage} alt={product.name} />
+          {mainImage ? (
+            <img src={mainImage} alt={product.name} />
+          ) : (
+            <div>No Image Available</div>
+          )}
         </div>
         <div className="thumbnail-gallery">
-          {product.img.map((src, index) => (
-            <img
-              key={index}
-              src={src}
-              alt={`${product.name} ${index + 1}`}
-              className={mainImage === src ? "active-thumb" : ""}
-              onClick={() => setMainImage(src)}
-            />
-          ))}
+          {product.img &&
+            product.img.map((src, index) => (
+              <img
+                key={index}
+                src={src}
+                alt={`${product.name} ${index + 1}`}
+                className={mainImage === src ? "active-thumb" : ""}
+                onClick={() => setMainImage(src)}
+                style={{ cursor: "pointer" }}
+              />
+            ))}
         </div>
       </div>
 
       <div className="product-right">
         <h2>{product.name}</h2>
         <p>
-          <strong>SKU:</strong> {product.sku}
+          <strong>SKU:</strong> {product.sku || "N/A"}
         </p>
         <p>
-          <strong>Rating:</strong> ⭐ {product.rating} ({product.reviews} reviews)
+          <strong>Material:</strong> {product.material || "N/A"}
         </p>
         <p>
-          <strong>Price:</strong> $
-          {product.discount && parseFloat(product.discount) > 0
-            ? (
-                product.price *
-                (1 - parseFloat(product.discount) / 100)
-              ).toFixed(2)
-            : product.price.toFixed(2)}
-          {product.discount && parseFloat(product.discount) > 0 && (
-            <span className="discount-tag"> ({product.discount} OFF)</span>
+          <strong>Category:</strong>{" "}
+          {product.category?.name || product.category || "N/A"}
+        </p>
+        <p>
+          <strong>Stock Status:</strong>{" "}
+          {product.stock ? (
+            <span style={{ color: "green" }}>In Stock</span>
+          ) : (
+            <span style={{ color: "red" }}>Out of Stock</span>
           )}
+        </p>
+        <p>
+          <strong>Rating:</strong> ⭐ {product.rating || "N/A"} (
+          {product.reviews || 0} reviews)
+        </p>
+        <p>
+          <strong>Price:</strong>{" "}
+          {discountPercent > 0 ? (
+            <span className="discount">
+              <span className="discounted-price">₹{discountedPrice}</span>{" "}
+              <span className="old-price">₹{product.price.toFixed(2)}</span>{" "}
+              <span className="discount-tag">({product.discount} OFF)</span>
+            </span>
+          ) : (
+            `₹${product.price.toFixed(2)}`
+          )}
+        </p>
+        <p>
+          <strong>Description:</strong> {product.desc}
         </p>
 
         <div className="product-actions">

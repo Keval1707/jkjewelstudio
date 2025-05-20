@@ -20,9 +20,7 @@ const ProductsGrid = ({ data, categories }) => {
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
-            className={`filter-btn ${
-              selectedCategory === category ? "active" : ""
-            }`}
+            className={`filter-btn ${selectedCategory === category ? "active" : ""}`}
           >
             {category}
           </button>
@@ -30,30 +28,51 @@ const ProductsGrid = ({ data, categories }) => {
       </div>
 
       <div className="products-grid">
-        {filteredData.map((item) => (
-          <div key={item.id} className="product-card">
-            <FadeIn>
-              <img
-                src={Array.isArray(item.img) ? item.img[0] : item.img}
-                alt={item.name}
-                onClick={() => navigate(`/products/${item.id}`)}
-              />
-              <h3>{item.name}</h3>
-              <p>${parseFloat(item.price).toFixed(2)}</p>
-              <div className="product-btn-group">
-                <Link to={`/products/${item.id}`} className="Products-btn">
-                  View Details
-                </Link>
-                <button
-                  className="Products-btn"
-                  onClick={() => addToCart({ ...item, quantity: 1 })}
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </FadeIn>
-          </div>
-        ))}
+        {filteredData.map((item) => {
+          const discountPercent = parseFloat(item.discount);
+          const hasDiscount = item.discount && discountPercent > 0;
+          const discountedPrice = hasDiscount
+            ? (item.price * (1 - discountPercent / 100)).toFixed(2)
+            : null;
+
+          return (
+            <div key={item.id} className="product-card">
+              <FadeIn>
+                <img
+                  src={Array.isArray(item.img) ? item.img[0] : item.img}
+                  alt={item.name}
+                  onClick={() => navigate(`/products/${item.id}`)}
+                  style={{ cursor: "pointer" }}
+                />
+                <h3>{item.name}</h3>
+
+                <p className="product-price">
+                  {hasDiscount ? (
+                    <>
+                      <span className="discounted-price">₹{discountedPrice}</span>{" "}
+                      <span className="old-price">₹{item.price}</span>{" "}
+                      <span className="discount-tag">({item.discount} OFF)</span>
+                    </>
+                  ) : (
+                    `$${item.price}`
+                  )}
+                </p>
+
+                <div className="product-btn-group">
+                  <Link to={`/products/${item.id}`} className="Products-btn">
+                    View Details
+                  </Link>
+                  <button
+                    className="Products-btn"
+                    onClick={() => addToCart({ ...item, quantity: 1 })}
+                  >
+                    Add to Cart
+                  </button>
+                </div>
+              </FadeIn>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
